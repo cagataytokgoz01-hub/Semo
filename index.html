@@ -26,7 +26,7 @@ html, body {
 
 body {
   background: #ffffff;
-  font-family: Arial, sans-serif;
+  font-family:'Poppins', system-ui, -apple-system, sans-serif;
   overflow: hidden;
 }
 
@@ -36,7 +36,7 @@ body {
 #splash{
   position:fixed;
   inset:0;
-  background: linear-gradient(#b7e2ff, #e9f7ff);
+  background:#fffdf6;
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -83,7 +83,7 @@ body {
 .menu-scroll{
   width:100%;
   max-width:380px;
-  padding:24px 16px calc(24px + env(safe-area-inset-bottom));
+  padding:32px 16px calc(24px + env(safe-area-inset-bottom));
   display:flex;
   flex-direction:column;
   gap:12px;
@@ -438,8 +438,14 @@ body {
 }
 
 .menu-scroll{
-  position: relative;
-  z-index: 1;
+  width:100%;
+  max-width:380px;
+  padding:24px 16px calc(24px + env(safe-area-inset-bottom));
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  overflow-y:auto;
+  padding-top: calc(84px + env(safe-area-inset-top));
 }
 
 .module.selected img{
@@ -532,6 +538,135 @@ body {
   width:auto;
   object-fit:contain;
 }
+
+.top-icon{
+  height:48px;      /* ikon için ideal */
+  width:auto;
+}
+
+.top-header{
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+
+  height: 84px;
+  padding-top: env(safe-area-inset-top);
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  background:#ffffff;
+}
+
+.top-header{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+}
+
+.session-time{
+  font-size:12px;
+  opacity:0.5;
+  color:#555;
+  white-space:nowrap;
+}
+
+.top-header{
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: 84px;
+  padding-top: env(safe-area-inset-top);
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  background:#fffdf6;
+  z-index:1000;
+  border-bottom: 1px solid rgba(0,0,0,.04);
+}
+
+/* 🦘 Kanguru TAM ORTA */
+.top-icon{
+  height:40px;
+}
+
+/* ⏱️ Süre – sağda, kapsül içinde */
+.session-time{
+  position:absolute;
+  right:16px;
+  top:50%;
+  transform: translateY(-50%);
+
+  font-size:12px;
+  color:#444;
+  opacity:0.85;
+
+  background:#ffffff;
+  padding:6px 10px;
+  border-radius:14px;
+
+  box-shadow:
+    0 2px 6px rgba(0,0,0,.08);
+
+  white-space:nowrap;
+}
+
+/* 🏠 Sol Home – sadece görsel */
+.home-icon{
+  position:absolute;
+  left:24px;
+  top:50%;
+  transform:translateY(-50%);
+
+  height:8px;
+  opacity:0.35;
+
+  pointer-events:none; /* kesinlikle tuş olmasın */
+}
+
+/* 🦘 Kanguru – merkez referans */
+.top-icon{
+  height:40px;
+}
+
+/* ⏱️ Sağ Süre – kapsül */
+.session-time{
+  position:absolute;
+  right:20px;
+  top:50%;
+  transform: translateY(-50%);
+
+  font-size:15px;
+  color:#444;
+  opacity:0.85;
+
+  background:#ffffff;
+  padding:8px 13px;
+  border-radius:18px;
+
+  box-shadow:0 2px 6px rgba(0,0,0,.08);
+  white-space:nowrap;
+  font-family:'Poppins', system-ui, -apple-system, sans-serif;
+
+}
+
+.top-header img.home-icon{
+  height:28px !important;
+  width:auto;
+}
+
+.menu-scroll{
+  margin-top: 10px;
+}
+
 </style>
 </head>
 
@@ -549,9 +684,11 @@ body {
 <div class="center-wrap">
   <div class="menu-scroll">
 
-<!-- ÜST LOGO ALANI -->
+<!-- ÜST ICON ALANI -->
 <div class="top-header">
-  <img src="images/logo.png" alt="DuyguApp Logo">
+  <img src="images/home.png" class="home-icon" alt="Home">
+  <img src="images/icon.png" class="top-icon" alt="Kanguru">
+  <div id="sessionTime" class="session-time">0 dk</div>
 </div>
 
    <!-- 1. UYGULAMA – TAM SATIR -->
@@ -674,7 +811,7 @@ function openInfo(){
 
   modalBody.innerHTML = `
     <p class="about-lead">
-      DuyguApp, çocukların duygularını fark etmelerine, bedenlerinde hissettiklerini tanımalarına ve kendilerini güvenli yollarla ifade etmelerine eşlik etmek için hazırlanmış bir duygusal farkındalık uygulamasıdır.
+      Bu uygulama, çocukların duygularını fark etmelerine, bedenlerinde hissettiklerini tanımalarına ve kendilerini güvenli yollarla ifade etmelerine eşlik etmek için hazırlanmış bir duygusal farkındalık uygulamasıdır.
     </p>
 
     <div class="app-item"><b>Bugün Nasıl Hissediyorsun?</b>Çocuğun o anki duygusunu fark etmesine ve isimlendirmesine destek olur.</div>
@@ -711,6 +848,15 @@ document.querySelectorAll(".module").forEach(btn=>{
     btn.classList.add("selected");
   });
 });
+
+const startTime = Date.now();
+const sessionTimeEl = document.getElementById("sessionTime");
+
+setInterval(() => {
+  const elapsedMs = Date.now() - startTime;
+  const minutes = Math.floor(elapsedMs / 60000);
+  sessionTimeEl.textContent = `${minutes} dk`;
+}, 60000);
 
 </script>
 
