@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Bugün Nasıl Hissediyorsun?</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- jsPDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+  * { box-sizing: border-box; font-family: Arial, sans-serif; }
+  body{
+    background: linear-gradient(#b7e2ff, #e9f7ff);
+    padding: 20px;
+    margin: 0;
+  }
+
+  .container {
+    max-width: 780px; margin: auto; background: #fff; padding: 20px;
+    border-radius: 12px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  }
+  h1 { text-align: center; margin-bottom: 20px; }
+
+  .section-title { margin-top: 20px; font-weight: bold; font-size: 18px; }
+
+  input, button {
+    width: 100%; padding: 10px; margin-top: 10px;
+    border-radius: 8px; border: 1px solid #ccc; font-size: 15px;
+  }
+
+  button {
+  cursor: pointer;
+  background: #2563eb;   /* 🔵 genel mavi */
+  color: white;
+  font-weight: bold;
+  margin-top: 10px;
+  border: none;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+  .danger { background: #e63946 !important; }
+
+  .separator {
+    border-top: 2px solid #ddd;
+    margin: 20px 0;
+  }
+
+  /* Öğrenci Fotoğraf Kartları */
+  .photos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 12px;
+    justify-content: center;
+  }
+
+  .photo-item {
+    width: 120px;
+    height: 140px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 3px solid transparent;
+    cursor: pointer;
+    position: relative;
+    background: #000;
+  }
+
+  .photo-item.selected {
+    border-color: #3b82f6;
+  }
+
+  .photo-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .name-tag {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background: rgba(0,0,0,0.65);
+    color: #fff;
+    padding: 4px;
+    font-size: 14px;
+    text-align: center;
+  }
+
+  .photo-icon {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.65);
+    color: #fff; display:flex; align-items:center; justify-content:center;
+    opacity: 0; transition: 0.2s;
+    user-select: none;
+  }
+
+  .photo-icon.zoom { right: 36px; }
+  .photo-icon.rename { right: 66px; }
+
+  .photo-item:hover .photo-icon { opacity: 1; }
+
+  /* DUYGU BUTONLARI */
+  .emotion-container{
+  display:grid;
+  grid-template-columns: repeat(2, 1fr); /* 🔥 2x2 sabit düzen */
+  gap:16px;
+  margin-top:12px;
+  justify-items:center;
+}
+
+  .emotion-btn{
+    padding:18px 20px;
+    background:#f0f0f0;
+    border-radius:16px;
+    cursor:pointer;
+    border:2px solid transparent;
+    min-width:150px;
+    text-align:center;
+  }
+
+  .emotion-btn.selected{
+    border-color:#3b82f6;
+    background:#e7f0ff;
+  }
+
+  /* ✅ KAREYİ TAM DOLDURMA (asıl çözüm) */
+  
+  .emotion-btn .icon{
+  width:120px;          /* 🔴 BURASI BOYUT */
+  height:120px;         /* 🔴 BURASI BOYUT */
+  margin:0 auto 12px;
+  border-radius:18px;
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+  .emotion-btn .icon img{
+  width:100%;
+  height:100%;
+  object-fit:cover;   /* 🔴 KAREYİ TAM DOLDURUR */
+  display:block;
+}
+
+  .label{
+    margin-top:4px;
+    font-size:14px;
+  }
+
+  /* TABLO */
+  table {
+    width: 100%; margin-top: 20px; border-collapse: collapse;
+  }
+  th, td {
+    padding: 10px; border-bottom: 1px solid #eee; text-align: left;
+  }
+  th { background: #f0f0f0; }
+
+  .thumb {
+    width: 50px; height: 50px; border-radius: 8px; object-fit: cover;
+  }
+
+  .delete-record-btn {
+    padding: 6px 10px; font-size: 12px;
+    background: #e63946; color: #fff; border-radius: 6px;
+    border: none;
+    cursor: pointer;
+  }
+
+  /* MODAL BÜYÜK FOTO */
+  #imageModal {
+    position: fixed; inset:0; background: rgba(0,0,0,0.7);
+    display:none; align-items:center; justify-content:center;
+    z-index: 1000;
+  }
+  #imageModal img {
+    max-width: 90%; max-height: 90%; border-radius: 12px;
+  }
+
+  /* POPUP */
+  #successPopup {
+    position: fixed; top: 25px; left: 50%; transform: translateX(-50%);
+    background: #16a34a; padding: 15px 25px; border-radius: 12px;
+    color: white; font-size: 18px; font-weight: bold;
+    display: none; z-index: 2000;
+  }
+
+  /* Rename Popup */
+  #renamePopup {
+    position: fixed; inset:0; background: rgba(0,0,0,0.55);
+    display:none; align-items:center; justify-content:center; z-index:2000;
+  }
+  #renameBox {
+    background:#fff; padding:20px; border-radius:12px;
+    width:300px; text-align:center;
+  }
+
+#backBtn{
+  position:fixed;
+  top:12px;
+  left:12px;
+  width:44px;
+  height:44px;
+  background:transparent;   /* 👈 KRİTİK */
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:1000;
+  text-decoration:none;
+}
+
+#backBtn img{
+  width:28px;
+  height:28px;
+  display:block;
+  pointer-events:none;
+}
+
+  /* 🌱 SABAH RİTÜELİ – TAMAM BUTONU */
+.ok-btn {
+  background: #22c55e;
+}
+
+.ok-btn:active {
+  transform: scale(0.98);
+}
+
+</style>
+</head>
+
+<body>
+
+<a id="backBtn" href="../index.html" aria-label="Geri">
+  <img src="images/geri.png" alt="Geri">
+</a>
+
+<div class="container">
+
+<h1>Bugün Nasıl Hissediyorsun?</h1>
+
+<!-- FOTO YÜKLEME -->
+<div class="section-title">Kişi Fotoğraflarını Yükle</div>
+<input type="file" id="photoUpload" multiple>
+<button id="clearPhotos" class="danger">Tüm Fotoğrafları Sil</button>
+
+<div class="section-title">Eklenen Kişiler</div>
+<div id="photoList" class="photos"></div>
+
+<div class="section-title">Bugün Sana Hangisi Daha Yakın?</div>
+<div id="childPicker" class="photos"></div>
+
+<div class="separator"></div>
+
+<!-- DUYGULAR (FINAL – 4 ÇEKİRDEK DUYGU) -->
+<div id="emotionButtons" class="emotion-container">
+
+  <div class="emotion-btn" data-value="Mutlu">
+    <span class="icon">
+      <img src="images/mutlu.svg" alt="Mutlu">
+    </span>
+    <div class="label">Mutlu</div>
+  </div>
+
+  <div class="emotion-btn" data-value="Üzgün">
+    <span class="icon">
+      <img src="images/uzgun.svg" alt="Üzgün">
+    </span>
+    <div class="label">Üzgün</div>
+  </div>
+
+  <div class="emotion-btn" data-value="Kızgın">
+    <span class="icon">
+      <img src="images/kizgin.svg" alt="Kızgın">
+    </span>
+    <div class="label">Kızgın</div>
+  </div>
+
+  <div class="emotion-btn" data-value="Korkmuş">
+    <span class="icon">
+      <img src="images/korkmus.svg" alt="Korkmuş">
+    </span>
+    <div class="label">Korkmuş</div>
+  </div>
+
+</div>
+
+<button id="saveRecord" class="ok-btn">Tamam</button>
+
+<!-- TABLO -->
+<div class="section-title">Kayıtlar</div>
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Foto</th>
+      <th>İsim</th>
+      <th>Duygu</th>
+      <th>Tarih</th>
+      <th>İşlem</th>
+    </tr>
+  </thead>
+  <tbody id="recordTable"></tbody>
+</table>
+
+<button id="endDay" class="danger">Günü Bitir</button>
+<button id="downloadPDF">Günlük Duygu Raporu İndir</button>
+
+</div>
+
+<!-- BÜYÜK FOTO MODALI -->
+<div id="imageModal"><img id="modalImage"></div>
+
+<!-- Popup -->
+<div id="successPopup">Kayıt Yapıldı 🎉</div>
+
+<!-- Rename Popup -->
+<div id="renamePopup">
+  <div id="renameBox">
+    <h3>Öğrenci Adı</h3>
+    <input id="renameInput" type="text" style="width:100%; padding:8px;">
+    <button id="renameSaveBtn" style="margin-top:10px">Kaydet</button>
+  </div>
+</div>
+
+<script>
+/* ============================
+   INDEXEDDB
+============================ */
+
+let db;
+const DB_NAME = "PhotoDB";
+const STORE = "photos";
+const req = indexedDB.open(DB_NAME, 1);
+
+req.onupgradeneeded = e => {
+  db = e.target.result;
+  if (!db.objectStoreNames.contains(STORE))
+    db.createObjectStore(STORE, { keyPath: "id" });
+};
+
+req.onsuccess = e => {
+  db = e.target.result;
+  renderPhotos();
+  renderChildPicker();
+
+  const bb = document.getElementById("backBtn");
+  if (bb) bb.style.display = "inline-block";
+
+  renderTable(); // sayfa açılınca bugünün kayıtları gelsin
+};
+
+req.onerror = () => {
+  alert("Veritabanı açılamadı (IndexedDB). Tarayıcı izinlerini kontrol et.");
+};
+
+/* Fotoğraf yükleme */
+document.getElementById("photoUpload").addEventListener("change", function () {
+  if (!db) return alert("DB hazır değil, sayfayı yenile.");
+  const files = [...this.files];
+  if (!files.length) return;
+
+  const tx = db.transaction(STORE, "readwrite");
+  const store = tx.objectStore(STORE);
+
+  files.forEach(f => {
+    const id = (crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now() + "_" + Math.random());
+    store.put({ id, blob: f, name: "" });
+  });
+
+  tx.oncomplete = () => {
+    renderPhotos();
+    renderChildPicker();
+    this.value = "";
+  };
+
+  tx.onerror = () => alert("Fotoğraf kaydı sırasında hata oldu.");
+});
+
+/* Fotoğraf DB URL */
+function getPhotoURL(id) {
+  return new Promise(res => {
+    const tx = db.transaction(STORE, "readonly");
+    const rq = tx.objectStore(STORE).get(id);
+    rq.onsuccess = () => res(rq.result ? URL.createObjectURL(rq.result.blob) : null);
+    rq.onerror = () => res(null);
+  });
+}
+
+/* Foto+Kayıt sil */
+function deletePhotoAndRecords(id) {
+  const tx = db.transaction(STORE, "readwrite");
+  tx.objectStore(STORE).delete(id);
+
+  tx.oncomplete = () => {
+    let rec = loadRecords().filter(x => x.childId !== id);
+    saveRecords(rec);
+    renderPhotos();
+    renderChildPicker();
+    renderTable();
+  };
+}
+
+/* Fotoğrafları tamamen sil */
+document.getElementById("clearPhotos").onclick = () => {
+  if (!confirm("Tüm fotoğraflar silinsin mi?")) return;
+  const tx = db.transaction(STORE, "readwrite");
+  tx.objectStore(STORE).clear();
+  tx.oncomplete = () => {
+    renderPhotos();
+    renderChildPicker();
+    alert("Tüm fotoğraflar silindi.");
+  };
+};
+
+/* ============================
+    KAYIT SİSTEMİ
+============================ */
+
+const KEY = "gunluk_kayitlar";
+
+function loadRecords() {
+  return JSON.parse(localStorage.getItem(KEY) || "[]");
+}
+function saveRecords(v) {
+  localStorage.setItem(KEY, JSON.stringify(v));
+}
+
+/* Tarih */
+function today() {
+  return new Date().toLocaleDateString("tr-TR");
+}
+
+/* ============================
+      FOTO ALANLARI
+============================ */
+
+function createPhotoElement(id, url, name) {
+  const d = document.createElement("div");
+  d.className = "photo-item";
+
+  d.innerHTML = `
+    <img src="${url}">
+    <div class="photo-icon zoom" data-a="zoom">🔍</div>
+    <div class="photo-icon delete" data-a="delete">🗑️</div>
+    <div class="photo-icon rename" data-a="rename">✏️</div>
+    <div class="name-tag">${name || ""}</div>
+  `;
+
+  d.onclick = e => {
+    const a = e.target.dataset.a;
+    if (a === "zoom") return openImageModal(url);
+    if (a === "delete") return deletePhotoAndRecords(id);
+    if (a === "rename") return openRenamePopup(id, name);
+  };
+
+  return d;
+}
+
+function renderPhotos() {
+  const list = document.getElementById("photoList");
+  list.innerHTML = "";
+  const tx = db.transaction(STORE, "readonly");
+  tx.objectStore(STORE).openCursor().onsuccess = e => {
+    const c = e.target.result;
+    if (!c) return;
+    const { id, blob, name } = c.value;
+    const url = URL.createObjectURL(blob);
+    list.appendChild(createPhotoElement(id, url, name));
+    c.continue();
+  };
+}
+
+function createSelectable(id, url, name) {
+  const d = document.createElement("div");
+  d.className = "photo-item";
+
+  d.innerHTML = `
+    <img src="${url}">
+    <div class="photo-icon" data-a="zoom">🔍</div>
+    <div class="name-tag">${name || ""}</div>
+  `;
+
+  d.onclick = e => {
+    if (e.target.dataset.a === "zoom") return openImageModal(url);
+    selectedChild = id;
+    [...document.querySelectorAll("#childPicker .photo-item")]
+      .forEach(x => x.classList.remove("selected"));
+    d.classList.add("selected");
+  };
+
+  return d;
+}
+
+function renderChildPicker() {
+  const pick = document.getElementById("childPicker");
+  pick.innerHTML = "";
+  const tx = db.transaction(STORE, "readonly");
+  tx.objectStore(STORE).openCursor().onsuccess = e => {
+    const c = e.target.result;
+    if (!c) return;
+    const { id, blob, name } = c.value;
+    const url = URL.createObjectURL(blob);
+    pick.appendChild(createSelectable(id, url, name));
+    c.continue();
+  };
+}
+
+/* =======================
+   STUDENT NAME
+======================= */
+
+async function getStudentName(id) {
+  return new Promise(res => {
+    const tx = db.transaction(STORE, "readonly");
+    const rq = tx.objectStore(STORE).get(id);
+    rq.onsuccess = () => res(rq.result?.name || "");
+    rq.onerror = () => res("");
+  });
+}
+
+/* ============================
+    DUYGU SEÇİM
+============================ */
+
+let selectedChild = null;
+let selectedEmotion = null;
+
+document.querySelectorAll(".emotion-btn").forEach(b =>
+  b.onclick = () => {
+    selectedEmotion = b.dataset.value;
+    document.querySelectorAll(".emotion-btn").forEach(x => x.classList.remove("selected"));
+    b.classList.add("selected");
+  }
+);
+
+/* ============================
+    KAYIT EKLE
+============================ */
+
+document.getElementById("saveRecord").onclick = () => {
+  if (!selectedChild) return alert("Kişi seç!");
+  if (!selectedEmotion) return alert("Duygu seç!");
+
+  const rec = loadRecords();
+  rec.push({
+    id: (crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now() + "_" + Math.random()),
+    childId: selectedChild,
+    emotion: selectedEmotion,
+    date: today()
+  });
+  saveRecords(rec);
+  renderTable();
+  showSuccessPopup();
+};
+
+/* POPUP */
+function showSuccessPopup() {
+  const p = document.getElementById("successPopup");
+  p.style.display = "block";
+  setTimeout(() => p.style.display = "none", 1500);
+}
+
+/* ============================
+        TABLO
+============================ */
+
+async function renderTable() {
+  const tbody = document.getElementById("recordTable");
+  tbody.innerHTML = "";
+
+  const tr = new Date().toLocaleDateString("tr-TR");
+  const rec = loadRecords().filter(r => r.date === tr);
+
+  for (let i = 0; i < rec.length; i++) {
+    const r = rec[i];
+    const url = await getPhotoURL(r.childId);
+    const stName = await getStudentName(r.childId);
+
+    tbody.innerHTML += `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${url ? `<img src="${url}" class="thumb">` : ""}</td>
+        <td>${stName}</td>
+        <td>${r.emotion}</td>
+        <td>${r.date}</td>
+        <td><button class="delete-record-btn" data-id="${r.id}">Sil</button></td>
+      </tr>
+    `;
+  }
+}
+
+/* Tek kayıt sil */
+document.getElementById("recordTable").onclick = e => {
+  const b = e.target.closest(".delete-record-btn");
+  if (!b) return;
+  let rec = loadRecords().filter(x => x.id !== b.dataset.id);
+  saveRecords(rec);
+  renderTable();
+};
+
+/* ============================
+   GÜNÜ BİTİR (TÜM KAYITLARI SİL)
+============================ */
+
+document.getElementById("endDay").onclick = () => {
+  const ok = confirm("Tüm kayıtlar silinecek emin misin?");
+  if (!ok) return;
+  localStorage.removeItem(KEY);
+  renderTable();
+};
+
+/* ============================
+      MODAL
+============================ */
+
+function openImageModal(url) {
+  document.getElementById("modalImage").src = url;
+  document.getElementById("imageModal").style.display = "flex";
+}
+
+document.getElementById("imageModal").onclick = () =>
+  document.getElementById("imageModal").style.display = "none";
+
+/* ============================
+      RENAME POPUP
+============================ */
+
+let renameId = null;
+
+function openRenamePopup(id, name) {
+  renameId = id;
+  document.getElementById("renameInput").value = name || "";
+  document.getElementById("renamePopup").style.display = "flex";
+}
+
+document.getElementById("renameSaveBtn").onclick = () => {
+  const name = document.getElementById("renameInput").value.trim();
+  const tx = db.transaction(STORE, "readwrite");
+  const store = tx.objectStore(STORE);
+
+  store.get(renameId).onsuccess = e => {
+    let obj = e.target.result;
+    obj.name = name;
+    store.put(obj);
+  };
+
+  tx.oncomplete = () => {
+    document.getElementById("renamePopup").style.display = "none";
+    renderPhotos();
+    renderChildPicker();
+    renderTable();
+  };
+};
+
+document.getElementById("renamePopup").onclick = e => {
+  if (e.target.id === "renamePopup")
+    document.getElementById("renamePopup").style.display = "none";
+};
+
+/* ============================
+      PDF — GÜN RAPORU
+============================ */
+
+document.getElementById("downloadPDF").onclick = async () => {
+  const tr = new Date().toLocaleDateString("tr-TR");
+  const rec = loadRecords().filter(r => r.date === tr);
+
+  if (rec.length === 0)
+    return alert("Bu tarihte kayıt yok.");
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.setFontSize(18);
+  doc.text("Günlük Duygu Raporu", 10, 15);
+  doc.text(tr, 10, 25);
+
+  let y = 40;
+
+  for (let i = 0; i < rec.length; i++) {
+    const r = rec[i];
+    const url = await getPhotoURL(r.childId);
+    const name = await getStudentName(r.childId);
+
+    const cleanEmotion = r.emotion.replace(/[^\p{L}\p{N}\s]/gu, "");
+
+    doc.text(`${i + 1}. ${name || "(İsimsiz)"} – ${cleanEmotion}`, 10, y);
+    if (url) doc.addImage(url, "JPEG", 150, y - 8, 30, 30);
+
+    y += 40;
+    if (y > 260) { doc.addPage(); y = 20; }
+  }
+
+  doc.save("gun_raporu.pdf");
+};
+</script>
+<script>
+  async function lockLandscape() {
+    try {
+      if (screen.orientation && screen.orientation.lock) {
+        await screen.orientation.lock("landscape");
+      }
+    } catch (e) {
+      // Bazı cihazlar/ayarlar izin vermez → sessiz geç
+    }
+  }
+
+  // iOS Safari çoğu zaman izin vermez; Android/PWA'da daha olası
+  window.addEventListener("load", () => {
+    // Bazı cihazlar "kullanıcı etkileşimi" ister:
+    document.addEventListener("click", lockLandscape, { once: true });
+    document.addEventListener("touchstart", lockLandscape, { once: true });
+    // Bazıları load'da da kabul eder:
+    lockLandscape();
+  });
+
+</script>
+</body>
+</html>
