@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Duygu Nerede?</title>
+
+<style>
+/* 🌈 GENEL */
+html,body{
+  margin:0; padding:0;
+  width:100%; height:100%;
+  overflow:hidden;
+  overscroll-behavior:none;
+  touch-action:manipulation;
+  background:linear-gradient(#b7e2ff,#e9f7ff);
+  font-family:system-ui, Arial, sans-serif;
+}
+*{box-sizing:border-box}
+img{user-select:none;-webkit-user-drag:none}
+
+/* ⬜ ORTA ALAN */
+.app{
+  width: calc(100% - 32px);
+  max-width:960px;
+
+  margin:16px auto;   /* 👈 KRİTİK: auto */
+  height: calc(100svh - 32px);
+
+  background:#ffffff;
+  border-radius:24px;
+  box-shadow:0 12px 30px rgba(0,0,0,.08);
+  padding:16px;
+  overflow:hidden;
+}
+
+.stage{
+  width:100%;
+  height:100%;
+  position:relative;
+}
+
+/* 🏠 HOME */
+#homeBtn{
+  position:fixed;
+  top:12px;
+  left:12px;
+  width:44px;
+  height:44px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:10000;
+}
+#homeBtn img{
+  width:28px;
+  height:28px;
+  pointer-events:none;
+}
+
+.body-img{
+  display:block;
+
+  /* 👇 ORANTIYI KORUYAN SINIRLAR */
+  max-width:60vw;        /* web için kritik */
+  max-height:85vh;       /* taşmayı engeller */
+
+  width:auto;
+  height:auto;
+
+  object-fit:contain;
+}
+
+.touch-spot{
+  position:absolute;
+  width:50px;
+  height:50px;
+  border-radius:50%;
+
+  background: rgba(143, 211, 232, 0.25); /* #8FD3E8 %25 */
+
+  pointer-events:none;   /* tıklamayı engellemez */
+  transform: translate(-50%, -50%);
+}
+
+.stage{
+  width:100%;
+  height:100%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.body-wrap{
+  position:relative;
+}
+
+@media (max-width: 768px){
+  .body-img{
+    max-width:90vw;
+    max-height:85vh;
+  }
+}
+
+/* ❌ KAPAT BUTONU */
+#closeBtn{
+  position:absolute;
+  right:16px;
+  bottom:16px;
+
+  width:44px;
+  height:44px;
+  padding:0;
+  border:none;
+  background:transparent;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  cursor:pointer;
+  z-index:9999;
+}
+
+#closeBtn img{
+  width:32px;
+  height:32px;
+  pointer-events:none;
+}
+
+</style>
+</head>
+
+<body>
+
+<audio id="pauseVoice" src="sounds/burada_biraz_duralim.mp3" preload="auto"></audio>
+<audio id="breathSound" src="sounds/nefes.mp3" preload="auto"></audio>
+
+<!-- HOME -->
+<a id="homeBtn" href="../index.html" aria-label="Ana Sayfa">
+  <img src="images/geri.png" alt="Geri">
+</a>
+
+<div class="app">
+  <div class="stage">
+    <div class="body-wrap" id="bodyWrap">
+      <img src="images/body.png" class="body-img" alt="Beden">
+    </div>
+  </div>
+
+<!-- ❌ KAPAT BUTONU (BURAYA) -->
+  <button id="closeBtn" aria-label="Kapat">
+    <img src="images/kapat.png" alt="Kapat">
+  </button>
+
+</div>
+
+<script>
+const bodyWrap   = document.getElementById("bodyWrap");
+const pauseVoice = document.getElementById("pauseVoice");
+const breath     = document.getElementById("breathSound");
+
+let timers = []; // tüm timeout’ları burada tutacağız
+
+function clearAll(){
+  // ⏱️ tüm beklemeleri iptal et
+  timers.forEach(t => clearTimeout(t));
+  timers = [];
+
+  // 🔇 tüm sesleri durdur
+  pauseVoice.pause();
+  breath.pause();
+
+  pauseVoice.currentTime = 0;
+  breath.currentTime = 0;
+}
+
+function startSequence(){
+  clearAll(); // 🔴 önce her şeyi sıfırla
+
+  // 2 sn sonra "burada duralım"
+  timers.push(setTimeout(() => {
+    pauseVoice.play();
+  }, 2000));
+
+  // 2 sn sonra nefes
+  timers.push(setTimeout(() => {
+    breath.play();
+  }, 4000));
+}
+
+bodyWrap.addEventListener("pointerdown", (e) => {
+
+  // 📍 dokunma noktası
+  const rect = bodyWrap.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  bodyWrap.querySelectorAll(".touch-spot").forEach(el => el.remove());
+
+  const spot = document.createElement("div");
+  spot.className = "touch-spot";
+  spot.style.left = x + "px";
+  spot.style.top  = y + "px";
+  bodyWrap.appendChild(spot);
+
+  // 🔁 HER DOKUNUŞ YENİ RİTÜEL
+  startSequence();
+});
+
+document.getElementById("closeBtn").addEventListener("click", () => {
+  clearAll();          // sesleri ve timer’ları durdur
+  location.reload();   // 🔄 tam reset
+});
+
+</script>
+
+</body>
+</html>
